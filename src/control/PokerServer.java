@@ -127,48 +127,12 @@ class HandleASession implements Runnable, PokerConstants
 				int status1 = fromPlayer1.readInt();
 				logC.append("Recieved P1: " + status1);	
 				
-				if (status1 == ACTION_FOLD) {					
-					toPlayer1.writeInt(ACTION_ENDGAME);
-					toPlayer2.writeInt(status1);				
-					
-					int winner = fromPlayer2.readInt();
-					logC.append("Player " + winner + " has won this round!");
-					int pot = fromPlayer2.readInt();
-					superC.getPlayC().setScoreP1(fromPlayer2.readInt());
-					superC.getPlayC().setScoreP2(fromPlayer2.readInt()+1);
-					superC.getPlayC().setRound(superC.getPlayC().getRound()+1);
-					
-					logC.append("Writing new data");
-					logC.append("Round: " + superC.getPlayC().getRound() + " Scores P1: " +superC.getPlayC().getScoreP1() + "P2: " +superC.getPlayC().getScoreP2());
-					toPlayer1.writeInt(0);
-					toPlayer2.writeInt(pot);					
-					toPlayer1.writeInt(superC.getPlayC().getRound());
-					toPlayer2.writeInt(superC.getPlayC().getRound());
-					toPlayer1.writeInt(superC.getPlayC().getScoreP1());
-					toPlayer2.writeInt(superC.getPlayC().getScoreP1());
-					toPlayer1.writeInt(superC.getPlayC().getScoreP2());
-					toPlayer2.writeInt(superC.getPlayC().getScoreP2());
-					logC.append("Writing new deck");
-					writeDeck();
-					
-					logC.append("Setting up a new Pot");
-					superC.getPlayC().setPot(0);
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer1.readInt());
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer2.readInt());
-					toPlayer1.writeInt(superC.getPlayC().getPot());
-					toPlayer2.writeInt(superC.getPlayC().getPot());					
-					logC.append("Pot has been set! Pot: " + superC.getPlayC().getPot());
+				if (status1 == ACTION_FOLD) {	
+					foldAction(status1, fromPlayer1, toPlayer1, fromPlayer2, toPlayer2);
 				}
 				else if (status1 == ACTION_CALL) {
-					toPlayer1.writeInt(ACTION_CALLED);
-					toPlayer2.writeInt(status1);
-					
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer1.readInt());
-					toPlayer1.writeInt(superC.getPlayC().getPot());
-					toPlayer2.writeInt(superC.getPlayC().getPot());
-				}
-					
-				
+					callAction(status1, fromPlayer1, toPlayer1, fromPlayer2, toPlayer2);
+				}				
 				
 				// P2
 				logC.append("Awaiting action from P2");
@@ -176,46 +140,10 @@ class HandleASession implements Runnable, PokerConstants
 				logC.append("Recieved P2: " + status2);
 				
 				if (status2 == ACTION_FOLD) {
-					foldAction(1, fromPlayer1, toPlayer1, fromPlayer2, toPlayer2);
-					
-					toPlayer1.writeInt(status2);
-					toPlayer2.writeInt(ACTION_ENDGAME);
-					
-					int winner = fromPlayer1.readInt();
-					logC.append("Player " + winner + " has won this round!");	
-					int pot = fromPlayer1.readInt();
-					superC.getPlayC().setScoreP1(fromPlayer1.readInt()+1);
-					superC.getPlayC().setScoreP2(fromPlayer1.readInt());
-					superC.getPlayC().setRound(superC.getPlayC().getRound()+1);
-					
-					logC.append("Writing new data");
-					logC.append("Round: " + superC.getPlayC().getRound() + " Scores P1: " +superC.getPlayC().getScoreP1() + "P2: " +superC.getPlayC().getScoreP2());
-					toPlayer1.writeInt(pot);
-					toPlayer2.writeInt(0);					
-					toPlayer1.writeInt(superC.getPlayC().getRound());
-					toPlayer2.writeInt(superC.getPlayC().getRound());
-					toPlayer1.writeInt(superC.getPlayC().getScoreP1());
-					toPlayer2.writeInt(superC.getPlayC().getScoreP1());
-					toPlayer1.writeInt(superC.getPlayC().getScoreP2());
-					toPlayer2.writeInt(superC.getPlayC().getScoreP2());
-					logC.append("Writing new deck");
-					writeDeck();
-					
-					logC.append("Setting up a new Pot");
-					superC.getPlayC().setPot(0);
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer1.readInt());
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer2.readInt());
-					toPlayer1.writeInt(superC.getPlayC().getPot());
-					toPlayer2.writeInt(superC.getPlayC().getPot());
-					logC.append("Pot has been set! Pot: " + superC.getPlayC().getPot());
+					foldAction(status2, fromPlayer2, toPlayer2, fromPlayer1, toPlayer1);
 				}	
-				else if (status2 == ACTION_CALL) {
-					toPlayer1.writeInt(status2);
-					toPlayer2.writeInt(ACTION_CALLED);
-					
-					superC.getPlayC().setPot(superC.getPlayC().getPot() + fromPlayer2.readInt());
-					toPlayer1.writeInt(superC.getPlayC().getPot());
-					toPlayer2.writeInt(superC.getPlayC().getPot());
+				else if (status2 == ACTION_CALL) {					
+					callAction(status2, fromPlayer2, toPlayer2, fromPlayer1, toPlayer1);
 				}
 				
 			}
@@ -224,41 +152,55 @@ class HandleASession implements Runnable, PokerConstants
 		}		
 	}
 	
-	private void foldAction(int status, DataInputStream inputFrom, DataOutputStream outputFrom, DataInputStream inputTo, DataOutputStream outputTo)
+	private void callAction(int status, DataInputStream fromThisPlayer, DataOutputStream toThisPlayer, DataInputStream fromOtherPlayer, DataOutputStream toOtherPlayer)
+	{		
+		try {
+			toThisPlayer.writeInt(ACTION_CALLED);
+			toOtherPlayer.writeInt(status);
+		
+			superC.getPlayC().setIncrease(superC.getPlayC().getIncrease() + fromThisPlayer.readInt());
+			
+			toOtherPlayer.writeInt(superC.getPlayC().getIncrease());
+			toThisPlayer.writeInt(superC.getPlayC().getIncrease());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void foldAction(int status, DataInputStream fromThisPlayer, DataOutputStream toThisPlayer, DataInputStream fromOtherPlayer, DataOutputStream toOtherPlayer)
 	{
 		
 		try {
-			outputFrom.writeInt(ACTION_ENDGAME);
-			outputTo.writeInt(status);					
+			toOtherPlayer.writeInt(status);
+			toThisPlayer.writeInt(ACTION_ENDGAME);
 			
-			int winner = fromPlayer2.readInt();
-			logC.append("Player " + winner + " has won this round!");
-			int pot = fromPlayer2.readInt();
-			superC.getPlayC().setScoreP1(inputFrom.readInt());
-			superC.getPlayC().setScoreP2(inputFrom.readInt()+1);
+			int winner = fromOtherPlayer.readInt();
+			logC.append("Player " + winner + " has won this round!");	
+			int pot = fromOtherPlayer.readInt();
+			superC.getPlayC().setScoreP1(fromOtherPlayer.readInt()+1);
+			superC.getPlayC().setScoreP2(fromOtherPlayer.readInt());
 			superC.getPlayC().setRound(superC.getPlayC().getRound()+1);
 			
 			logC.append("Writing new data");
 			logC.append("Round: " + superC.getPlayC().getRound() + " Scores P1: " +superC.getPlayC().getScoreP1() + "P2: " +superC.getPlayC().getScoreP2());
-			outputFrom.writeInt(0);
-			outputTo.writeInt(pot);					
-			outputFrom.writeInt(superC.getPlayC().getRound());
-			outputTo.writeInt(superC.getPlayC().getRound());
-			outputFrom.writeInt(superC.getPlayC().getScoreP1());
-			outputTo.writeInt(superC.getPlayC().getScoreP1());
-			outputFrom.writeInt(superC.getPlayC().getScoreP2());
-			outputTo.writeInt(superC.getPlayC().getScoreP2());
+			toOtherPlayer.writeInt(pot);
+			toThisPlayer.writeInt(0);					
+			toOtherPlayer.writeInt(superC.getPlayC().getRound());
+			toThisPlayer.writeInt(superC.getPlayC().getRound());
+			toOtherPlayer.writeInt(superC.getPlayC().getScoreP1());
+			toThisPlayer.writeInt(superC.getPlayC().getScoreP1());
+			toOtherPlayer.writeInt(superC.getPlayC().getScoreP2());
+			toThisPlayer.writeInt(superC.getPlayC().getScoreP2());
 			logC.append("Writing new deck");
 			writeDeck();
 			
 			logC.append("Setting up a new Pot");
 			superC.getPlayC().setPot(0);
-			superC.getPlayC().setPot(superC.getPlayC().getPot() + inputFrom.readInt());
-			superC.getPlayC().setPot(superC.getPlayC().getPot() + inputTo.readInt());
-			outputFrom.writeInt(superC.getPlayC().getPot());
-			outputTo.writeInt(superC.getPlayC().getPot());					
-			logC.append("Pot has been set! Pot: " + superC.getPlayC().getPot());
-		
+			superC.getPlayC().setPot(superC.getPlayC().getPot() + fromOtherPlayer.readInt());
+			superC.getPlayC().setPot(superC.getPlayC().getPot() + fromThisPlayer.readInt());
+			toOtherPlayer.writeInt(superC.getPlayC().getPot());
+			toThisPlayer.writeInt(superC.getPlayC().getPot());
+			logC.append("Pot has been set! Pot: " + superC.getPlayC().getPot());		
 		} catch (IOException e) {
 			e.printStackTrace();
 		}	

@@ -6,9 +6,9 @@ public class PlayerController
 	
 	private int round;
 	private int pot;
+	private int increase;
 	private int chipStack;
 	private boolean bigBlind;
-	private int calledChips;
 	private int otherPlayer;
 	private int scoreP1;
 	private int scoreP2;
@@ -88,14 +88,14 @@ public class PlayerController
 		this.scoreP2 = scoreP2;
 	}
 
-	public int getCalledChips()
+	public int getIncrease()
 	{
-		return calledChips;
+		return increase;
 	}
 
-	public void setCalledChips(int calledChips)
+	public void setIncrease(int increase)
 	{
-		this.calledChips = calledChips;
-	}
-	
+		this.increase = increase;
+	}	
+		
 }

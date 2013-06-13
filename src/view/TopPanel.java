@@ -15,6 +15,7 @@ public class TopPanel extends JPanel
 	
 	private int round;
 	private int pot;
+	private int increase;
 	private int scoreP1;
 	private int scoreP2;
 	
@@ -27,14 +28,16 @@ public class TopPanel extends JPanel
 		this.superC = superC;
 		this.round = superC.getPlayC().getRound();
 		this.pot = superC.getPlayC().getPot();
+		this.increase = superC.getPlayC().getIncrease();
 		this.scoreP1 = superC.getPlayC().getScoreP1();
 		this.scoreP2 = superC.getPlayC().getScoreP2();
+		
 		
 		setLayout(new GridLayout(1,3));
 		this.lRound = new JLabel(" Round: " + round);
 		add(lRound);
 		
-		this.lPot = new JLabel("Pot: " + pot);
+		this.lPot = new JLabel("Pot: " + pot + " + ("+increase+")");
 		add(lPot);
 		
 		this.lScore = new JLabel("P1: " + scoreP1 + " / P2: " + scoreP2);		
@@ -45,7 +48,7 @@ public class TopPanel extends JPanel
 	public void updateTopPanel()
 	{
 		lRound.setText(" Round: " + superC.getPlayC().getRound());
-		lPot.setText("Pot: " + superC.getPlayC().getPot());
+		lPot.setText("Pot: " + superC.getPlayC().getPot() + " + ("+superC.getPlayC().getIncrease()+")");
 		lScore.setText("P1: " + superC.getPlayC().getScoreP1() + " / P2: " + superC.getPlayC().getScoreP2());
 		this.revalidate();
 	}

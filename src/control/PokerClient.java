@@ -61,7 +61,6 @@ public class PokerClient extends JFrame implements Runnable, PokerConstants
 		superC = new SuperController();
 		superC.getPlayC().setChipStack(0);
 		superC.getPlayC().setPot(0);
-		superC.getPlayC().setCalledChips(0);
 		superC.getPlayC().setRound(1);
 		
 		
@@ -180,7 +179,6 @@ public class PokerClient extends JFrame implements Runnable, PokerConstants
 		if (myTurn) {
 			toServer.writeInt(selectedAction);
 			if (selectedAction == ACTION_CALL) {
-				superC.getPlayC().setChipStack(superC.getPlayC().getChipStack() - superC.getPlayC().getPot());
 				toServer.writeInt(superC.getPlayC().getPot());				
 			}
 			setMyTurn(false);
@@ -219,12 +217,11 @@ public class PokerClient extends JFrame implements Runnable, PokerConstants
 			setBlinds(20);			
 
 			setMyTurn(true);
-			waiting = true;
 		}
 		else if (status == ACTION_CALL) {
 			logC.appendTop("Player "+superC.getPlayC().getOtherPlayer()+" used - Call!");		
 			
-			superC.getPlayC().setPot(fromServer.readInt());			
+			superC.getPlayC().setIncrease(fromServer.readInt());
 			topPanel.updateTopPanel();
 			topPanel.revalidate();
 			setMyTurn(true);
@@ -254,10 +251,11 @@ public class PokerClient extends JFrame implements Runnable, PokerConstants
 			setBlinds(20);			
 			
 			setMyTurn(false);
-			waiting = false;
 		}
 		else if (status == ACTION_CALLED) {
-			superC.getPlayC().setPot(fromServer.readInt());
+			superC.getPlayC().setIncrease(fromServer.readInt());
+			logC.appendTop("You called, " +superC.getPlayC().getIncrease()+ " was added to the pot");
+			superC.getPlayC().setChipStack(superC.getPlayC().getChipStack() - superC.getPlayC().getIncrease());
 			topPanel.updateTopPanel();
 			topPanel.revalidate();
 			lChips.setText("$: " + superC.getPlayC().getChipStack());
@@ -402,6 +400,7 @@ public class PokerClient extends JFrame implements Runnable, PokerConstants
 		setEnabledButtons(myTurn);
 		if(myTurn)
 			logC.appendTop("You may make your move");
+		waiting = myTurn;
 	}
 	
 	private void setBlinds(int input)
